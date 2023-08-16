@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "720s"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "720s"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "720s"
+    nginx.ingress.kubernetes.io/gzip-types: "text/css text/scss text/plain text/xml application/xml application/json application/javascript"
+    nginx.ingress.kubernetes.io/use-gzip: "true"
+    nginx.ingress.kubernetes.io/location-snippet: |
+      location /websocket {
+        proxy_pass http://odoo:8072;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+      }
+      location / {
+        # Add Headers for odoo proxy mode
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_redirect off;
+        proxy_pass http://odoo:8069;
+      }
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header 'Content-Security-Policy' 'upgrade-insecure-requests';
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: www.example.com
+      http:
+        paths:
+          - pathType: Prefix
+            backend:
+              service:
+                name: odoo
+                port:
+                  number: 8069
+            path: /
+  tls:
+    - hosts:
+      - www.example.com
+      secretName: example-tls

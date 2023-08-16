@@ -1,0 +1,30 @@
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: odoo-pv-volume  # Sets PV's name
+  labels:
+    type: local  # Sets PV's type to local
+    app: odoo
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi # Sets PV Volume
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/odoo"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: odoo-pv-claim  # Sets name of PVC
+  labels:
+    app: odoo
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany  # Sets read and write access
+  resources:
+    requests:
+      storage: 5Gi  # Sets volume size

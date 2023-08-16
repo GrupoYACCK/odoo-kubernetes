@@ -1,0 +1,40 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odoo  # Sets Deployment name
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: odoo
+  template:
+    metadata:
+      labels:
+        app: odoo
+    spec:
+      containers:
+        - name: odoo
+          image: odoo:16.0 # Sets Image
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 8069  # Exposes container port
+          envFrom:
+            - configMapRef:
+                name: odoo-config
+          args: ["--log-level=info", "--db-filter=.*"]
+          volumeMounts:
+            - mountPath: /var/lib/odoo
+              name: odoo
+      initContainers:
+        - name: odoo-permissions
+          image: debian:bullseye-slim
+          command: ['chown', "101:101", "-R", "/var/lib/odoo"]
+          volumeMounts:
+            - mountPath: /var/lib/odoo
+              name: odoo
+      volumes:
+        - name: odoo
+          persistentVolumeClaim:
+            claimName: odoo-pv-claim
+
